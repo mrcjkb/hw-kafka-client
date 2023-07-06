@@ -17,6 +17,7 @@ import Kafka.Metadata
 import Kafka.Producer
 import Kafka.TestEnv
 import Test.Hspec
+import Control.Concurrent.Async (replicateConcurrently, concurrently)
 
 import qualified Data.ByteString as BS
 
@@ -169,6 +170,12 @@ spec = do
 
                   forM_ res $ \rcs ->
                     forM_ rcs ((`shouldBe` Set.fromList (headersToList testHeaders)) . Set.fromList . headersToList . crHeaders)
+
+    describe "Kafka.Consumer.Spec" $ do
+        specWithConsumer "closeConsumer" (consumerProps <> groupId "test-consumer") $ do
+            it "doesn't crash when called concurrently lots of times" $ \k -> do
+                res <- replicateConcurrently 100 $ closeConsumer k
+                length res `shouldBe` 100
 
 ----------------------------------------------------------------------------------------------------------------
 
